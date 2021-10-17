@@ -1,5 +1,4 @@
 ﻿using Microsoft.ML;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -33,6 +32,8 @@ namespace YOLOv4MLNet
     {
 
         public static int numberOfProcessedImages;
+
+        public static CancellationTokenSource cts = new CancellationTokenSource();
 
         public RecognitionClass() { }
         public event EventHandler ResultEvent;
@@ -76,7 +77,6 @@ namespace YOLOv4MLNet
             // Create prediction engine
             var predictionEngine = mlContext.Model.CreatePredictionEngine<YoloV4BitmapData, YoloV4Prediction>(model);
 
-            //using var bitmap = new Bitmap(Image.FromFile(Path.Combine(imageFolder, imageName)));
             using var bitmap = new Bitmap(Image.FromFile(imageName));
 
             // predict
@@ -95,19 +95,13 @@ namespace YOLOv4MLNet
             return new ImageInformation(imageName, groupedResults, recognitionRectangleList);
         }
 
+        public void RecognitionStop(CancellationTokenSource cts)
+        {
+            cts.Cancel();
+        }
+
         public void ProgramStart(string path)
         {
-            CancellationTokenSource stopToken = new CancellationTokenSource();
-            CancellationTokenSource exitToken = new CancellationTokenSource();
-
-            Task tokenTask = Task.Run(() =>
-            {
-                while (!(Console.ReadLine() == "s"))
-                {
-                    if (exitToken.IsCancellationRequested) { break; }
-                }
-                stopToken.Cancel();
-            });
 
             // LOGIC TIME :)
             string[] filePaths = Directory.GetFiles(@path, "*.jpg");
@@ -120,18 +114,13 @@ namespace YOLOv4MLNet
                 {
                     int idx = (int)pi;
 
-                    if (!stopToken.IsCancellationRequested)
+                    if (!cts.IsCancellationRequested)
                     {
-                        lock (obj)
-                        {
-                            ImageInformation stats = ImageRecognition(filePaths[idx]);
-                            this.ResultEvent?.Invoke(this, stats);
-                        }
+                        ImageInformation stats = ImageRecognition(filePaths[idx]);
+                        this.ResultEvent?.Invoke(this, stats);
                     }
-                    if (idx == (filePaths.Count() - 1)) { exitToken.Cancel(); }
-                }, i);
-
-                
+                }, i, cts.Token);
+  
             }
 
             Task.WaitAll(tasks);

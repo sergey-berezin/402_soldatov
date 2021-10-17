@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 namespace YOLOv4MLNet
 {
    //https://towardsdatascience.com/yolo-v4-optimal-speed-accuracy-for-object-detection-79896ed47b50
@@ -38,13 +38,24 @@ namespace YOLOv4MLNet
         static void Main()
         {
             Console.WriteLine("Enter the name of the directory with images: ");
-            string directory = Console.ReadLine();
-            //string directory = @"/Users/u0da/Documents/Lab1/YOLOv4MLNet/Assets/Images";
+            //string directory = Console.ReadLine();
+            string directory = @"/Users/u0da/Documents/Lab1/YOLOv4MLNet/Assets/Images";
             filePathCount = Directory.GetFiles(directory, "*.jpg").Count();
+
 
             Console.WriteLine($"0% of images is processed.\n");
             RecognitionClass recognitionClassObj = new RecognitionClass();
             recognitionClassObj.ResultEvent += EventHandler;
+
+            Task tokenTask = Task.Factory.StartNew(() =>
+            {
+                while (!(Console.ReadLine() == "s"))
+                {
+                    recognitionClassObj.RecognitionStop(RecognitionClass.cts);
+                }
+            }, TaskCreationOptions.LongRunning);
+
+
             recognitionClassObj.ProgramStart(directory);
             Console.WriteLine($"Processing is over!");
         }
