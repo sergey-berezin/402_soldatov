@@ -51,7 +51,7 @@ namespace YOLOv4MLNet
             {
                 while (!(Console.ReadLine() == "s"))
                 {
-                    recognitionClassObj.RecognitionStop(RecognitionClass.cts);
+                    recognitionClassObj.RecognitionStop();
                 }
             }, TaskCreationOptions.LongRunning);
 

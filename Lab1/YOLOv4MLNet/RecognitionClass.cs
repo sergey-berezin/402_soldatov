@@ -95,7 +95,7 @@ namespace YOLOv4MLNet
             return new ImageInformation(imageName, groupedResults, recognitionRectangleList);
         }
 
-        public void RecognitionStop(CancellationTokenSource cts)
+        public void RecognitionStop()
         {
             cts.Cancel();
         }
