@@ -7,20 +7,24 @@ using YOLOv4MLNet.DataStructures;
 using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace YOLOv4MLNet
 {
     public struct ImageInformation
     {
-        public string Path { get; }
+        public string Path { get; set; }
 
-        public IEnumerable<IGrouping<string, YoloV4Result>> Results { get; }
+        public string NewPath { get; set; }
 
-        public List<RecognitionRectangle> RecognitionRectangle { get; }
+        public IEnumerable<IGrouping<string, YoloV4Result>> Results { get; set; }
 
-        public ImageInformation(string path, IEnumerable<IGrouping<string, YoloV4Result>> results, List<RecognitionRectangle> rectangle)
+        public List<RecognitionRectangle> RecognitionRectangle { get; set; }
+
+        public ImageInformation(string path, string NewPath, IEnumerable<IGrouping<string, YoloV4Result>> results, List<RecognitionRectangle> rectangle)
         {
             this.Path = path;
+            this.NewPath = NewPath;
             this.Results = results;
             this.RecognitionRectangle = rectangle;
         }
@@ -38,10 +42,10 @@ namespace YOLOv4MLNet
         public RecognitionClass() { }
         public event EventHandler ResultEvent;
 
-        const string modelPath = @"/Users/u0da/Documents/Lab1/YOLOv4MLNet/yolov4.onnx";
+        const string modelPath = @"..\Lab1\YOLOv4MLNet\yolov4.onnx"; // для windows!!!!!!!
 
         private static readonly object obj = new object();
-        static readonly string[] classesNames = new string[] { "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" };
+        public static readonly string[] classesNames = new string[] { "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" };
 
         public static ImageInformation ImageRecognition(string imageName)
         {
@@ -79,20 +83,36 @@ namespace YOLOv4MLNet
 
             using var bitmap = new Bitmap(Image.FromFile(imageName));
 
+            using var g = Graphics.FromImage(bitmap);
+
+            using var brushes = new SolidBrush(Color.FromArgb(50, Color.Red));
+
             // predict
             var predict = predictionEngine.Predict(new YoloV4BitmapData() { Image = bitmap });
             var results = predict.GetResults(classesNames, 0.3f, 0.7f);
             var groupedResults = predict.GetResults(classesNames, 0.3f, 0.7f).GroupBy(e => e.Label);
+
             List<RecognitionRectangle> recognitionRectangleList = new List<RecognitionRectangle>();
+
             foreach (var res in results)
             {
                 var x1 = res.BBox[0];
                 var y1 = res.BBox[1];
                 var x2 = res.BBox[2];
                 var y2 = res.BBox[3];
-                recognitionRectangleList.Add(new RecognitionRectangle(x1, y1, y2 - y1, x2 - x1, res.Label)); 
+
+                recognitionRectangleList.Add(new RecognitionRectangle(x1, y1, y2 - y1, x2 - x1, res.Label));
+
+                g.DrawRectangle(Pens.Red, x1, y1, x2 - x1, y2 - y1);
+                g.FillRectangle(brushes, x1, y1, x2 - x1, y2 - y1);
+                g.DrawString(res.Label, new Font("Arial", 52), Brushes.Blue, new PointF(x1, y1));
             }
-            return new ImageInformation(imageName, groupedResults, recognitionRectangleList);
+
+            string NewImagePath = Path.ChangeExtension(imageName, "_processed" + Path.GetExtension(imageName));
+
+            bitmap.Save(NewImagePath);
+
+            return new ImageInformation(imageName, NewImagePath, groupedResults, recognitionRectangleList);
         }
 
         public void RecognitionStop()
@@ -102,6 +122,11 @@ namespace YOLOv4MLNet
 
         public void ProgramStart(string path)
         {
+            string[] filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
+            foreach(var file in filePathsToDelete)
+            {
+                File.Delete(file);
+            }
 
             // LOGIC TIME :)
             string[] filePaths = Directory.GetFiles(@path, "*.jpg");
@@ -116,8 +141,11 @@ namespace YOLOv4MLNet
 
                     if (!cts.IsCancellationRequested)
                     {
-                        ImageInformation stats = ImageRecognition(filePaths[idx]);
-                        this.ResultEvent?.Invoke(this, stats);
+                        //lock (obj)
+                        //{
+                            ImageInformation stats = ImageRecognition(filePaths[idx]);
+                            this.ResultEvent?.Invoke(this, stats);
+                        //} 
                     }
                 }, i, cts.Token);
   
