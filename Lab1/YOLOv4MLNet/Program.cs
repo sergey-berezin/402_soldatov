@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 namespace YOLOv4MLNet
 {
    //https://towardsdatascience.com/yolo-v4-optimal-speed-accuracy-for-object-detection-79896ed47b50
@@ -38,7 +39,8 @@ namespace YOLOv4MLNet
         static void Main()
         {
             Console.WriteLine("Enter the name of the directory with images: ");
-            string directory = Console.ReadLine();
+            //string directory = Console.ReadLine();
+            string directory = @"..\Lab1\YOLOv4MLNet\Assets\Images";
             filePathCount = Directory.GetFiles(directory, "*.jpg").Count();
 
 

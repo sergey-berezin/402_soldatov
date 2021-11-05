@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
         Title="Recognition App (by Soldatov Alexander)" Height="450" Width="800">
     <Grid>
@@ -20,34 +19,34 @@
 
         <TextBlock x:Name="SingleClassImages" HorizontalAlignment="Left" Margin="567,83,0,0" Text="Images of Chosen Class:" TextWrapping="Wrap" VerticalAlignment="Top"/>
 
-        <ListBox x:Name="ImagesAndInformationListBox" HorizontalAlignment="Left" Height="287" Margin="31,101,0,0" VerticalAlignment="Top" Width="261">
+        <ListBox x:Name="ImagesAndInformationListBox" ItemsSource="{Binding Path=ImageCollection, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Height="287" Margin="31,101,0,0" VerticalAlignment="Top" Width="261">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
-                        <Image Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}" Height="204" Width="202" HorizontalAlignment="Left"/>
-                        <TextBlock Text="{Binding ImagePath}" FontSize="10" HorizontalAlignment="Left" TextWrapping="Wrap"/>
+                        <Image Source="{Binding Path=NewPath}" Height="204" Width="202" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding Path=Path}" FontSize="10" HorizontalAlignment="Left" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding RecognizedClasses, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" HorizontalAlignment="Left" FontSize="10"/>
+                            <TextBlock x:Name="ResultsTextBlock" Text="{Binding Path=StringResults, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" HorizontalAlignment="Left" FontSize="10"/>
                         </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <ListBox x:Name="AllClassLabelsListBox" SelectionChanged="AllClassLabelsListBoxChanged" Margin="322,101,270,24">
+        <ListBox x:Name="AllClassLabelsListBox" SelectionChanged="AllClassLabelsListBoxChanged" ItemsSource="{Binding Path=AllClassLabelsCollection}" Margin="322,101,270,24">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding ClassLabel, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{Binding Path=ClassLabel}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <ListBox x:Name="SingleClassListBox" Margin="567,101,25,24">
+        <ListBox x:Name="SingleClassListBox" ItemsSource="{Binding Path=SingleClassLabelCollection, UpdateSourceTrigger=PropertyChanged}" Margin="567,101,25,24">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Image Source="{Binding ImageOfClassLabel}" Height="154" Width="152" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <Image Source="{Binding Path=Path}" Height="154" Width="152" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

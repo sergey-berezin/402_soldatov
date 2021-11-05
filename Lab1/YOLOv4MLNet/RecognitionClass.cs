@@ -7,7 +7,6 @@ using YOLOv4MLNet.DataStructures;
 using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
 
 namespace YOLOv4MLNet
 {
@@ -19,13 +18,16 @@ namespace YOLOv4MLNet
 
         public IEnumerable<IGrouping<string, YoloV4Result>> Results { get; set; }
 
+        public string StringResults { get; set; }
+
         public List<RecognitionRectangle> RecognitionRectangle { get; set; }
 
-        public ImageInformation(string path, string NewPath, IEnumerable<IGrouping<string, YoloV4Result>> results, List<RecognitionRectangle> rectangle)
+        public ImageInformation(string path, string NewPath, IEnumerable<IGrouping<string, YoloV4Result>> results, string stringres, List<RecognitionRectangle> rectangle)
         {
             this.Path = path;
             this.NewPath = NewPath;
             this.Results = results;
+            this.StringResults = stringres;
             this.RecognitionRectangle = rectangle;
         }
     }
@@ -42,7 +44,7 @@ namespace YOLOv4MLNet
         public RecognitionClass() { }
         public event EventHandler ResultEvent;
 
-        const string modelPath = @"..\Lab1\YOLOv4MLNet\yolov4.onnx"; // для windows!!!!!!!
+        const string modelPath = @"..\Lab1\YOLOv4MLNet\yolov4.onnx";
 
         private static readonly object obj = new object();
         public static readonly string[] classesNames = new string[] { "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" };
@@ -94,6 +96,8 @@ namespace YOLOv4MLNet
 
             List<RecognitionRectangle> recognitionRectangleList = new List<RecognitionRectangle>();
 
+            string str = "";
+
             foreach (var res in results)
             {
                 var x1 = res.BBox[0];
@@ -108,11 +112,16 @@ namespace YOLOv4MLNet
                 g.DrawString(res.Label, new Font("Arial", 52), Brushes.Blue, new PointF(x1, y1));
             }
 
+            foreach(var res in groupedResults)
+            {
+                str += res.Key + " - " + res.Count() + "\n";
+            }
+
             string NewImagePath = Path.ChangeExtension(imageName, "_processed" + Path.GetExtension(imageName));
 
             bitmap.Save(NewImagePath);
 
-            return new ImageInformation(imageName, NewImagePath, groupedResults, recognitionRectangleList);
+            return new ImageInformation(imageName, NewImagePath, groupedResults, str, recognitionRectangleList);
         }
 
         public void RecognitionStop()
@@ -122,6 +131,7 @@ namespace YOLOv4MLNet
 
         public void ProgramStart(string path)
         {
+
             string[] filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
             foreach(var file in filePathsToDelete)
             {
