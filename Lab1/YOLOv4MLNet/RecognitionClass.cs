@@ -44,7 +44,7 @@ namespace YOLOv4MLNet
         public RecognitionClass() { }
         public event EventHandler ResultEvent;
 
-        const string modelPath = @"..\Lab1\YOLOv4MLNet\yolov4.onnx";
+        const string modelPath = @"C:\...\yolov4.onnx";
 
         private static readonly object obj = new object();
         public static readonly string[] classesNames = new string[] { "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" };
@@ -132,14 +132,43 @@ namespace YOLOv4MLNet
         public void ProgramStart(string path)
         {
 
-            string[] filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
-            foreach(var file in filePathsToDelete)
+            /*            string[] filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
+                        foreach(var file in filePathsToDelete)
+                        {
+                            File.Delete(file);
+                        }
+
+                        // LOGIC TIME :)
+                        string[] filePaths = Directory.GetFiles(@path, "*.jpg");*/
+
+            string[] filePathsToDelete;
+            string[] filePaths;
+
+            try
             {
-                File.Delete(file);
+                filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
+                foreach (var file in filePathsToDelete)
+                {
+                    File.Delete(file);
+                }
+            }
+            catch (IOException)
+            {
+                if (path.EndsWith("processed.jpg"))
+                {
+                    File.Delete(path);
+                }
             }
 
-            // LOGIC TIME :)
-            string[] filePaths = Directory.GetFiles(@path, "*.jpg");
+            try
+            {
+                filePaths = Directory.GetFiles(@path, "*.jpg");
+            }
+            catch (IOException)
+            {
+                filePaths = new string[1];
+                filePaths[0] = path;
+            }
 
             // Making tasks
             var tasks = new Task[filePaths.Count()];
