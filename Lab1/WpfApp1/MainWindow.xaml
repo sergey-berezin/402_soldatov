@@ -15,7 +15,7 @@
 
         <TextBox x:Name="DirectoryName" HorizontalAlignment="Left" Margin="100,24,0,0" Text="The Name of the Chosen Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="445" Height="20"/>
 
-        <TextBlock x:Name="FolderImagesAndInformation" HorizontalAlignment="Left" Margin="31,83,0,0" Text="Images from Chosen Folder and Information:" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <TextBlock x:Name="FolderImagesAndInformation" HorizontalAlignment="Left" Margin="31,83,0,0" Text="Images from Database:" TextWrapping="Wrap" VerticalAlignment="Top"/>
 
         <TextBlock x:Name="AllClasses" HorizontalAlignment="Left" Margin="322,83,0,0" Text="All Classes:" TextWrapping="Wrap" VerticalAlignment="Top"/>
 

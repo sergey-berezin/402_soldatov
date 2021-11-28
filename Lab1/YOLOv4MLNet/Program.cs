@@ -39,8 +39,7 @@ namespace YOLOv4MLNet
         static void Main()
         {
             Console.WriteLine("Enter the name of the directory with images: ");
-            //string directory = Console.ReadLine();
-            string directory = @"C:...";
+            string directory = Console.ReadLine();
             filePathCount = Directory.GetFiles(directory, "*.jpg").Count();
 
 

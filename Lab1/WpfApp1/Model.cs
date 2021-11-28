@@ -15,23 +15,29 @@ namespace WpfApp1
     public class ModelImageInformation
     {
         public int Id { get; set; }
-
         public int Hash { get; set; }
         public string Path { get; set; }
-
         public ClassLabel ClassLabels { get; set; }
-        //public List<RecognitionRectangle> RecognitionRectangle { get; set; }
+        public ICollection<Rectangle> RecognitionRectangle { get; set; }
         public Blob ImageContext { get; set; }
     }
 
-    public class ImageObject
+    public class Rectangle
     {
-        public string StringResults { get; set; }
-        //public List<RecognitionRectangle> RecognitionRectangle { get; set; }
-        public ImageObject(string results/*,List<RecognitionRectangle> rectangles*/)
+        public int Id { get; set; }
+        public double x { get; set; }
+        public double y { get; set; }
+        public double height { get; set; }
+        public double width { get; set; }
+        public string label { get; set; }
+
+        public Rectangle(double x, double y, double height, double width, string label)
         {
-            StringResults = results;
-           // RecognitionRectangle = rectangles;
+            this.x = x;
+            this.y = y;
+            this.height = height;
+            this.width = width;
+            this.label = label;
         }
     }
 
@@ -39,30 +45,45 @@ namespace WpfApp1
     {
         public int ClassLabelId { get; set; }
         public string StringClassLabel { get; set; }
-        public ICollection<ModelImageInformation> ImagesInformation { get; set; }
+    }
+
+
+    public class ImageObject
+    {
+        public string StringResults { get; set; }
+        public ICollection<Rectangle> RecognitionRectangle { get; set; }
+        public ImageObject(string results, ICollection<Rectangle> rectangles)
+        {
+            StringResults = results;
+            RecognitionRectangle = rectangles;
+        }
     }
 
     public class ModelContext: DbContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite("DataSource=model.db");
+
         public DbSet<Blob> ImageContext { get; set; }
         public DbSet<ClassLabel> ClassLabels { get; set; }
         public DbSet<ModelImageInformation> ImagesInformation { get; set; }
 
-/*        public ModelContext()
+        public ModelContext()
         {
-            Database.EnsureCreated();
-        }*/
+            Database.EnsureCreated(); 
+        }
 
-        public ImageObject DatabaseCheck(string path) //???
+        public ImageObject DatabaseCheck(string path)
         {
             ImageObject image = null;
             bool flag = true;
+
             byte[] BinaryFile = File.ReadAllBytes(path);
 
-            foreach(var item in ImagesInformation.Include(obj => obj.ClassLabels).Where(obj => obj.Hash == GetHashCode(BinaryFile)))
+            foreach(var item in ImagesInformation.Where(obj => obj.Hash == GetHashCode(BinaryFile)))
             {
                 Entry(item).Reference(obj => obj.ImageContext).Load();
+                Entry(item).Collection(obj => obj.RecognitionRectangle).Load();
+                Entry(item).Reference(obj => obj.ClassLabels).Load();
 
                 if (BinaryFile.Length == item.ImageContext.ImageContext.Length)
                 {
@@ -79,8 +100,7 @@ namespace WpfApp1
 
                 if (flag == true)
                 {
-                    image = new ImageObject(item.ClassLabels.StringClassLabel/*, item.RecognitionRectangle*/); //уже нет ошибки???
-                    //SaveChanges();
+                    image = new ImageObject(item.ClassLabels.StringClassLabel, item.RecognitionRectangle); 
                     break;
                 }
             }
@@ -88,23 +108,26 @@ namespace WpfApp1
             return image;
         }
 
-        public void DatabaseAdding(ImageInformation image) //???
+        public void DatabaseAdding(ImageInformation image)
         {
+
             ModelImageInformation AddedImage = new ModelImageInformation
             {
                 Path = image.Path,
-                ImageContext = new Blob() { ImageContext = File.ReadAllBytes(image.Path) },
+                ImageContext = new Blob() { ImageContext = File.ReadAllBytes(image.NewPath) },
                 Hash = GetHashCode(File.ReadAllBytes(image.Path)),
             };
+
+            AddedImage.RecognitionRectangle = new List<Rectangle>();
+            foreach (var item in image.RecognitionRectangle)
+            {
+                AddedImage.RecognitionRectangle.Add(new Rectangle(item.x, item.y, item.height, item.width, item.label));
+            }
+
 
             AddedImage.ClassLabels = new ClassLabel()
             {
                 StringClassLabel = image.StringResults
-            };
-
-            AddedImage.ClassLabels.ImagesInformation = new List<ModelImageInformation>
-            {
-                AddedImage
             };
 
             ImagesInformation.Add(AddedImage);
@@ -157,7 +180,8 @@ namespace WpfApp1
     }
 }
 
-// Add-Migration InitialCreate
-// Update-Database
-// Drop-Database // Y
-// Remove-Migration
+// Entity Framework Core database instruction:
+// 1) Add-Migration InitialCreate
+// 2) Update-Database
+// 3) Drop-Database // 4) Y
+// 5) Remove-Migration

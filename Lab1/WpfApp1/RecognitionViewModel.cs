@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -24,8 +25,6 @@ namespace WpfApp1
         {
             dispatcher.BeginInvoke(new Action(() =>
             {
-                //ImageCollection.Add(information);
-                //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection")); 
                 ImageCollection.Add(new ImageInformation(information.Path, information.NewPath, information.Results, information.StringResults,
                     information.RecognitionRectangle));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection"));
@@ -44,36 +43,12 @@ namespace WpfApp1
         {
             RecognitionStatus = true;
 
-/*            foreach (var path in Directory.GetFiles(ChosenDirectoryPath, "*.jpg"))
-            {
-                if (path.EndsWith("processed.jpg"))
-                {
-                    File.Delete(path);
-                }
-            }*/
-
             ThreadPool.QueueUserWorkItem(new WaitCallback(param =>
             {
                 foreach (var path in Directory.GetFiles(ChosenDirectoryPath, "*.jpg"))
                 {
-                    /*                    if (path.EndsWith("processed.jpg"))
-                                        {
-                                            File.Delete(path);
-                                        }*/
 
-                    /*                    dispatcher.BeginInvoke(new Action(() =>
-                                        {
-                                            ImageCollection.Add(new ImageInformation()
-                                            {
-                                                Path = path,
-                                                NewPath = path,
-                                                Results = null,
-                                                StringResults = "",
-                                                RecognitionRectangle = null,
-                                            });
-                                        }));*/
-
-                    if (!path.EndsWith("processed.jpg")) //smth new
+                    if (!path.EndsWith("processed.jpg"))
                     {
 
                         ImageObject ObjectCheck = model.DatabaseCheck(path);
@@ -89,24 +64,11 @@ namespace WpfApp1
                                     LibraryObject.ProgramStart(path);
                                 });
                             }
-                            else
-                            {
-                                ImageCollection.Add(new ImageInformation(path, path, null, ObjectCheck.StringResults, null)); //???
-                                //image.RecognitionRectangle = ObjectCheck.RecognitionRectangle;
-                                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection"));
-                            }
                         }));
                     }
 
                 }
                 RecognitionStatus = false;
-
-                //LibraryObject.ProgramStart(ChosenDirectoryPath);
-
-                //dispatcher.BeginInvoke(new Action(() =>
-                //{
-                //    RecognitionStatus = false;
-                //}));
 
             }));
         }
@@ -132,6 +94,7 @@ namespace WpfApp1
             AllClassLabelsCollection = new ObservableCollection<AllClassLabels>();
 
             model = new ModelContext();
+
             LockObject = new object();
 
             for (int i = 0; i <= 79; i++)
@@ -151,8 +114,15 @@ namespace WpfApp1
                 {
                     if (ObjectCheck != null)
                     {
-                        ImageCollection.Add(new ImageInformation(item.Path, item.Path, null, ObjectCheck.StringResults, null)); //wtf
-                        //image.RecognitionRectangle = ObjectCheck.RecognitionRectangle;
+                        string NewPath = Path.ChangeExtension(item.Path, "_processed" + Path.GetExtension(item.Path));
+
+                        List<RecognitionRectangle> NewCollection = new List<RecognitionRectangle>();
+                        foreach (var element in ObjectCheck.RecognitionRectangle)
+                        {
+                            NewCollection.Add(new RecognitionRectangle(element.x, element.y, element.height, element.width, element.label));
+                        }
+
+                        ImageCollection.Add(new ImageInformation(item.Path, NewPath, null, ObjectCheck.StringResults, NewCollection));
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection"));
                     }
                 }));
@@ -161,10 +131,6 @@ namespace WpfApp1
 
         public void NewOpeningAndRecognition()
         {
-            //LibraryObject = new RecognitionClass();
-            //LibraryObject.ResultEvent += EventHandler;
-
-            //ImageCollection.Clear(); по заданию?...
             SingleClassLabelCollection.Clear();
 
             ImageRecognitionWPF();
@@ -178,17 +144,32 @@ namespace WpfApp1
 
         public void CollectionFilter(AllClassLabels ClassLabelElement)
         {
-                for (int i = 0; i < ImageCollection.Count(); i++)
+            for (int i = 0; i < ImageCollection.Count(); i++)
+            {
+                if (ImageCollection[i].Results != null) // if not in database
                 {
                     foreach (var res in ImageCollection[i].Results)
                     {
                         if (res.Key == ClassLabelElement.ClassLabel)
                         {
-                        SingleClassLabelCollection.Add(ImageCollection[i]);
+                            SingleClassLabelCollection.Add(ImageCollection[i]);
                         }
                     }
                 }
+                else // database case
+                {
+                    string[] subs = ImageCollection[i].StringResults.Split(' ');
+                    foreach (var sub in subs)
+                    {
+                        if (sub == ClassLabelElement.ClassLabel)
+                        {
+                            SingleClassLabelCollection.Add(ImageCollection[i]);
+                        }
+                    }
+                }
+            }
         }
+
 
         public void DatabaseCleaning()
         {
@@ -199,6 +180,12 @@ namespace WpfApp1
                     DatabaseCleaningStatus = true;
 
                     model.DatabaseCleanup();
+
+                    ImageCollection.Clear();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection")); 
+
+                    SingleClassLabelCollection.Clear();
+
                     model = new ModelContext();
 
                     DatabaseCleaningStatus = false;

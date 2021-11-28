@@ -96,7 +96,7 @@ namespace YOLOv4MLNet
 
             List<RecognitionRectangle> recognitionRectangleList = new List<RecognitionRectangle>();
 
-            string str = "";
+            string str = " ";
 
             foreach (var res in results)
             {
@@ -114,7 +114,7 @@ namespace YOLOv4MLNet
 
             foreach(var res in groupedResults)
             {
-                str += res.Key + " - " + res.Count() + "\n";
+                str += res.Key + " - " + res.Count() + "\n ";
             }
 
             string NewImagePath = Path.ChangeExtension(imageName, "_processed" + Path.GetExtension(imageName));
@@ -131,15 +131,6 @@ namespace YOLOv4MLNet
 
         public void ProgramStart(string path)
         {
-
-            /*            string[] filePathsToDelete = Directory.GetFiles(@path, "*processed.jpg");
-                        foreach(var file in filePathsToDelete)
-                        {
-                            File.Delete(file);
-                        }
-
-                        // LOGIC TIME :)
-                        string[] filePaths = Directory.GetFiles(@path, "*.jpg");*/
 
             string[] filePathsToDelete;
             string[] filePaths;
@@ -170,6 +161,7 @@ namespace YOLOv4MLNet
                 filePaths[0] = path;
             }
 
+            // LOGIC TIME :)
             // Making tasks
             var tasks = new Task[filePaths.Count()];
             for (int i = 0; i <= filePaths.Count() - 1; i++)
