@@ -88,13 +88,11 @@ namespace WpfApp1
                 if (BinaryFile.Length == item.ImageContext.ImageContext.Length)
                 {
                     flag = true;
-                    for (int i = 0; i <= BinaryFile.Length - 1; i++)
+
+                    if (!BinaryFile.SequenceEqual(item.ImageContext.ImageContext))
                     {
-                        if (BinaryFile[i] != item.ImageContext.ImageContext[i])
-                        {
-                            flag = false;
-                            break;
-                        }
+                        flag = false;
+                        break;
                     }
                 }
 
