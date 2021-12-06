@@ -4,11 +4,11 @@ namespace YOLOv4MLNet
 {
    public class RecognitionRectangle
     {
-        private readonly double x;
-        private readonly double y;
-        private readonly double height;
-        private readonly double width;
-        private readonly string label;
+        public double x;
+        public double y;
+        public double height;
+        public double width;
+        public string label;
 
         public RecognitionRectangle(double x, double y, double height, double width, string label)
         {

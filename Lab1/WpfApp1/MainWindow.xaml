@@ -9,11 +9,13 @@
 
         <Button x:Name="FolderOpeningButton" Content="Open Folder" HorizontalAlignment="Left" Margin="25,24,0,0" VerticalAlignment="Top" Click="FolderOpeningButton_Click"/>
 
+        <Button x:Name="DataBaseCleaningButton" Content="Database Cleaning" Click="DataBaseCleaningButton_Click" HorizontalAlignment="Left" Margin="142,49,0,0" VerticalAlignment="Top" Width="110"/>
+
         <Button Content="Recognition Stop" HorizontalAlignment="Left" Margin="25,49,0,0" VerticalAlignment="Top" Width="103" Background="#FFEA1A1A" Click="RecognitionStop_Click"/>
 
         <TextBox x:Name="DirectoryName" HorizontalAlignment="Left" Margin="100,24,0,0" Text="The Name of the Chosen Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="445" Height="20"/>
 
-        <TextBlock x:Name="FolderImagesAndInformation" HorizontalAlignment="Left" Margin="31,83,0,0" Text="Images from Chosen Folder and Information:" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <TextBlock x:Name="FolderImagesAndInformation" HorizontalAlignment="Left" Margin="31,83,0,0" Text="Images from Database:" TextWrapping="Wrap" VerticalAlignment="Top"/>
 
         <TextBlock x:Name="AllClasses" HorizontalAlignment="Left" Margin="322,83,0,0" Text="All Classes:" TextWrapping="Wrap" VerticalAlignment="Top"/>
 

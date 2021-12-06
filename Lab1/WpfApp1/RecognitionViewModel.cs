@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using YOLOv4MLNet;
 
@@ -12,14 +15,27 @@ namespace WpfApp1
     {
         private RecognitionClass LibraryObject;
 
+        private ModelContext model;
+
+        private readonly object LockObject;
+
         readonly Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
 
         private void EventHandler(object sender, ImageInformation information)
         {
             dispatcher.BeginInvoke(new Action(() =>
             {
-                ImageCollection.Add(information);
+                ImageCollection.Add(new ImageInformation(information.Path, information.NewPath, information.Results, information.StringResults,
+                    information.RecognitionRectangle));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection"));
+
+                Task.Run(() =>
+                {
+                    lock (LockObject)
+                    {
+                        model.DatabaseAdding(information);
+                    }
+                });
             }));
         }
 
@@ -29,12 +45,30 @@ namespace WpfApp1
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(param =>
             {
-                LibraryObject.ProgramStart(ChosenDirectoryPath);
-
-                dispatcher.BeginInvoke(new Action(() =>
+                foreach (var path in Directory.GetFiles(ChosenDirectoryPath, "*.jpg"))
                 {
-                    RecognitionStatus = false;
-                }));
+
+                    if (!path.EndsWith("processed.jpg"))
+                    {
+
+                        ImageObject ObjectCheck = model.DatabaseCheck(path);
+
+                        dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            if (ObjectCheck == null)
+                            {
+                                Task.Run(() =>
+                                {
+                                    LibraryObject = new RecognitionClass();
+                                    LibraryObject.ResultEvent += EventHandler;
+                                    LibraryObject.ProgramStart(path);
+                                });
+                            }
+                        }));
+                    }
+
+                }
+                RecognitionStatus = false;
 
             }));
         }
@@ -43,6 +77,7 @@ namespace WpfApp1
         public event PropertyChangedEventHandler PropertyChanged;
 
         public bool RecognitionStatus = false;
+        public bool DatabaseCleaningStatus = false;
 
         public string ChosenDirectoryPath { get; set; }
 
@@ -58,6 +93,10 @@ namespace WpfApp1
             SingleClassLabelCollection = new ObservableCollection<ImageInformation>();
             AllClassLabelsCollection = new ObservableCollection<AllClassLabels>();
 
+            model = new ModelContext();
+
+            LockObject = new object();
+
             for (int i = 0; i <= 79; i++)
             {
                 AllClassLabelsCollection.Add(new AllClassLabels()
@@ -65,14 +104,33 @@ namespace WpfApp1
                     ClassLabel = classesNames[i]
                 });
             }
+
+
+            foreach (var item in model.ImagesInformation)
+            {
+                ImageObject ObjectCheck = model.DatabaseCheck(item.Path);
+
+                dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (ObjectCheck != null)
+                    {
+                        string NewPath = Path.ChangeExtension(item.Path, "_processed" + Path.GetExtension(item.Path));
+
+                        List<RecognitionRectangle> NewCollection = new List<RecognitionRectangle>();
+                        foreach (var element in ObjectCheck.RecognitionRectangle)
+                        {
+                            NewCollection.Add(new RecognitionRectangle(element.x, element.y, element.height, element.width, element.label));
+                        }
+
+                        ImageCollection.Add(new ImageInformation(item.Path, NewPath, null, ObjectCheck.StringResults, NewCollection));
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection"));
+                    }
+                }));
+            }
         }
 
         public void NewOpeningAndRecognition()
         {
-            LibraryObject = new RecognitionClass();
-            LibraryObject.ResultEvent += EventHandler;
-
-            ImageCollection.Clear();
             SingleClassLabelCollection.Clear();
 
             ImageRecognitionWPF();
@@ -86,16 +144,53 @@ namespace WpfApp1
 
         public void CollectionFilter(AllClassLabels ClassLabelElement)
         {
-                for (int i = 0; i < ImageCollection.Count(); i++)
+            for (int i = 0; i < ImageCollection.Count(); i++)
+            {
+                if (ImageCollection[i].Results != null) // if not in database
                 {
                     foreach (var res in ImageCollection[i].Results)
                     {
                         if (res.Key == ClassLabelElement.ClassLabel)
                         {
-                        SingleClassLabelCollection.Add(ImageCollection[i]);
+                            SingleClassLabelCollection.Add(ImageCollection[i]);
                         }
                     }
                 }
+                else // database case
+                {
+                    string[] subs = ImageCollection[i].StringResults.Split(' ');
+                    foreach (var sub in subs)
+                    {
+                        if (sub == ClassLabelElement.ClassLabel)
+                        {
+                            SingleClassLabelCollection.Add(ImageCollection[i]);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public void DatabaseCleaning()
+        {
+            if (RecognitionStatus == false)
+            {
+                lock (LockObject)
+                {
+                    DatabaseCleaningStatus = true;
+
+                    model.DatabaseCleanup();
+
+                    ImageCollection.Clear();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageCollection")); 
+
+                    SingleClassLabelCollection.Clear();
+
+                    model = new ModelContext();
+
+                    DatabaseCleaningStatus = false;
+                }
+            }
         }
         
     }
